@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Copyright 2017 Yan Zhenjie
+    Copyright 2017 Yan Zhenjie.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -14,17 +14,17 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 -->
-<RelativeLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    style="@style/AlbumMatchParent"
-    android:background="@color/albumColorPrimaryBlack">
+<com.yanzhenjie.album.widget.SquareCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    style="@style/Album.Item.Card.MatchParent"
+    app:cardBackgroundColor="@color/albumColorPrimaryBlack">
 
-    <ImageView
+    <com.yanzhenjie.album.widget.SquareImageView
         android:id="@+id/iv_album_content_button"
-        style="@style/AlbumMatchParent"
-        android:background="?selectableItemBackgroundBorderless"
+        style="@style/Album.MatchParent"
+        android:background="?selectableItemBackground"
         android:contentDescription="@string/album_title"
         android:scaleType="center"
-        android:src="@drawable/album_ic_add_photo_white"/>
+        android:src="@drawable/album_ic_add_photo_white" />
 
-</RelativeLayout>
+</com.yanzhenjie.album.widget.SquareCardView>

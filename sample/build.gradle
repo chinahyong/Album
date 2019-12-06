@@ -10,27 +10,16 @@ android {
         targetSdkVersion rootProject.ext.android.targetSdkVersion
         versionCode rootProject.ext.android.versionCode
         versionName rootProject.ext.android.versionName
-
-        jackOptions {
-            enabled true
-        }
-
-        compileOptions {
-            sourceCompatibility JavaVersion.VERSION_1_8
-            targetCompatibility JavaVersion.VERSION_1_8
-        }
     }
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile rootProject.ext.dependencies.album
-    compile rootProject.ext.dependencies.appcompat
-    compile rootProject.ext.dependencies.design
-    compile rootProject.ext.dependencies.recyclerview
-    compile rootProject.ext.dependencies.dialog
+    implementation rootProject.ext.dependencies.album
 
-    // define image loader.
-    compile rootProject.ext.dependencies.picasso
-    compile rootProject.ext.dependencies.glide
+    implementation rootProject.ext.dependencies.appCompat
+    implementation rootProject.ext.dependencies.design
+    implementation rootProject.ext.dependencies.recyclerView
+    implementation rootProject.ext.dependencies.cardView
+
+    implementation rootProject.ext.dependencies.glide
 }

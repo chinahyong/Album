@@ -1,5 +1,5 @@
 /*
- * Copyright © Yan Zhenjie. All Rights Reserved
+ * Copyright 2017 Yan Zhenjie.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package com.yanzhenjie.album;
 
-import com.yanzhenjie.album.impl.AlbumImageLoader;
+import android.content.Context;
 
 import java.util.Locale;
 
@@ -25,21 +25,28 @@ import java.util.Locale;
  */
 public class AlbumConfig {
 
-    private AlbumImageLoader mImageLoader;
+    /**
+     * Create a new builder.
+     */
+    public static Builder newBuilder(Context context) {
+        return new Builder(context);
+    }
+
+    private AlbumLoader mLoader;
     private Locale mLocale;
 
-    private AlbumConfig(Build build) {
-        this.mImageLoader = build.mLoader;
-        this.mLocale = build.mLocale;
+    private AlbumConfig(Builder builder) {
+        this.mLoader = builder.mLoader == null ? AlbumLoader.DEFAULT : builder.mLoader;
+        this.mLocale = builder.mLocale == null ? Locale.getDefault() : builder.mLocale;
     }
 
     /**
-     * Get {@link AlbumImageLoader}.
+     * Get {@link AlbumLoader}.
      *
-     * @return {@link AlbumImageLoader}.
+     * @return {@link AlbumLoader}.
      */
-    public AlbumImageLoader getImageLoader() {
-        return mImageLoader;
+    public AlbumLoader getAlbumLoader() {
+        return mLoader;
     }
 
     /**
@@ -51,21 +58,21 @@ public class AlbumConfig {
         return mLocale;
     }
 
-    public static final class Build {
+    public static final class Builder {
 
-        private AlbumImageLoader mLoader;
+        private AlbumLoader mLoader;
         private Locale mLocale;
 
-        public Build() {
+        private Builder(Context context) {
         }
 
         /**
-         * Set image loader.
+         * Set album loader.
          *
-         * @param loader {@link AlbumImageLoader}.
-         * @return {@link Build}.
+         * @param loader {@link AlbumLoader}.
+         * @return {@link Builder}.
          */
-        public Build setImageLoader(AlbumImageLoader loader) {
+        public Builder setAlbumLoader(AlbumLoader loader) {
             this.mLoader = loader;
             return this;
         }
@@ -74,9 +81,9 @@ public class AlbumConfig {
          * Set locale for language.
          *
          * @param locale {@link Locale}.
-         * @return {@link Build}.
+         * @return {@link Builder}.
          */
-        public Build setLocale(Locale locale) {
+        public Builder setLocale(Locale locale) {
             this.mLocale = locale;
             return this;
         }

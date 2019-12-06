@@ -1,232 +1,334 @@
 # Album
-`Album` is an MaterialDesign tyle open source album, the main function is: `Album, Camera and Gallery`.
+<image src="./image/logo.png"/>  
 
-[中文文档](./README-CN.md)
+Album is a Material Design style album, it provides three functions: album, camera and gallery.
 
-# Features
-1. Perfect for **Android7.0 FileUriExposedException**.
-2. Support component：`Activity`、`Fragment`.
-3. UI style can be configured, for example: `Toolbar`、`StatusBar`、`NavigationBar`.
-4. Album: Radio, multi-select, folder preview.
-5. Camera: call alone, as the item of the album.
-6. Gallery: Support zoom, browse local pictures and network pictures.
-7. Configure the album's number of columns, configure the album if there is a camera.
-8. Gallery preview multiple pictures, preview can be anti-election.
-9. Support for custom LocalImageLoader, such as: `Glide`, `Picasso`, `ImageLoder`.
+1. Select images, selecte videos, or select pictures and videos.
+2. Take a picture, record a video, or use camera in album list.
+3. Preview pictures and videos in the gallery or select pictures and videos in the gallery.
 
-# Screenshot
-Please experience [download apk](https://github.com/yanzhenjie/Album/blob/master/sample-release.apk?raw=true).  
+## Screenshot
+<image src="./image/1.gif" width="210px"/> <image src="./image/2.gif" width="210px"/> <image src="./image/3.gif" width="210px"/> <image src="./image/4.gif" width="210px"/>  
 
-<image src="./image/1.gif" width="170px"/> <image src="./image/2.gif" width="170px"/> <image src="./image/3.gif" width="170px"/> <image src="./image/4.gif" width="170px"/>
+White StatusBar, the left is the effect of 5.0-(Containing 5.0), the right is the effect of 6.0+(Containing 6.0):  
+  
+<image src="./image/5.gif" width="210px"/> <image src="./image/6.gif" width="210px"/>  
 
-# Dependencies
-* Gradle：
+Effect on landscape screen:  
+
+<image src="./image/7.gif"/>
+
+## Download
 ```groovy
-compile 'com.yanzhenjie:album:1.0.5'
+implementation 'com.yanzhenjie:album:2.1.3'
 ```
 
-* Maven:
-```xml
-<dependency>
-  <groupId>com.yanzhenjie</groupId>
-  <artifactId>album</artifactId>
-  <version>1.0.5</version>
-  <type>pom</type>
-</dependency>
-```
+## Usage
+Developers must configure `AlbumLoader` to make Album work normally, and AlbumLoader is used to load thumbnails of images and videos.
 
-# Register in mainifest.xml
-For your application to be better and more stable, a few properties are required, you can also add other, for example: `android:screenOrientation="portrait"`.
-```xml
-<activity
-    android:name="com.yanzhenjie.album.AlbumActivity"
-    android:configChanges="orientation|keyboardHidden|screenSize"
-    android:theme="@style/Theme.AppCompat.Light.NoActionBar"
-    android:windowSoftInputMode="stateAlwaysHidden|stateHidden" />
-```
-
-# Permission
-```xml
-<uses-permission android:name="android.permission.CAMERA"/>
-<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
-<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
-<uses-permission android:name="android.permission.MOUNT_UNMOUNT_FILESYSTEMS"/>
-```
-
-* Developers do not need to worry about `Android6.0` runtime permissions，`Album` has been very well handled.  
-* The repository version of the `support-library` is `25.3.1`, if your version is higher than `25.3.1`, you need to explicitly specify the version of` CardView`.
-
-# Usage
-Album's main function is: `Album, Camera and Gallery`, the following are described separately.  
-
-## Album
-Use `Album.album(context).start()` to call up the `Album`.  
+This is an example:
 ```java
-Album.album(context)
-    .requestCode(999) // Request code.
-    .toolBarColor(toolbarColor) // Toolbar color.
-    .statusBarColor(statusBarColor) // StatusBar color.
-    .navigationBarColor(navigationBarColor) // NavigationBar color.
-    .title("Album") // Title.
-    
-    .selectCount(9) // Choose up to a few pictures.
-    .columnCount(2) // Number of albums.
-    .camera(true) // Have a camera function.
-    .checkedList(mImageList) // Has selected the picture, automatically select.
-    .start();
-```
+public class MediaLoader implements AlbumLoader {
 
-Accept the result：  
-```java
-@Override
-protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-    if(requestCode == 999) {
-        if (resultCode == RESULT_OK) { // Successfully.
-            // Parse select result.
-            ArrayList<String> imageList = Album.parseResult(data);
-        } else if (resultCode == RESULT_CANCELED) {
-            // User canceled.
-        }
-    }
-}
-```
-
-## Camera
-Use the `Album.camera(context).start ()` to call up the `Camera`, has handled the RunTimePermissions and `Android7.0 FileProvider`
-```java
-Album.camera(context)
-    .requestCode(666)
-    // .imagePath() // Specify the image path, optional.
-    .start();
-```
-
-Accept the result： 
-```java
-@Override
-protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-    if(requestCode == 666) {
-        if (resultCode == RESULT_OK) { // Successfully.
-            // The size of the pathList is 1.
-            List<String> pathList = Album.parseResult(data); // Parse path.
-        } else if (resultCode == RESULT_CANCELED) {
-            // User canceled.
-        }
-    }
-}
-```
-
-## Gallery
-Use the `Album.gallery(context).start ()` to call up the `Gallery`, default support for previewing local images, preview the network pictures need to configure `ImageLoader`, see below for details.
-
-Call you only need to pass in a path set:  
-```java
-Album.gallery(context)
-    .requestCode(444) // Request code.
-    .toolBarColor(toolbarColor) // Toolbar color.
-    .statusBarColor(statusBarColor) // StatusBar color.
-    .navigationBarColor(navigationBarColor) // NavigationBar color.
-    
-    .checkedList(mImageList) // List of pictures to preview.
-    .currentPosition(position) // First display position image of the list.
-    .checkFunction(true) // Anti-election function.
-    .start();
-```
-
-**Note:**
-
-* Be sure to pass in the collection of pictures you want to preview, otherwise it will return immediately after the start.  
-* It is recommended to call the gallery preview to judge `if(currentPosition < mImageList.size())`, to ensure that the entry of the `position` in the `list`.  
-
-If you need to have an anti-selection function at the time of preview，override the `onActivityResult ()` method, after receiving the anti-selected picture `List` result:  
-```java
-@Override
-protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-    if(requestCode == 444) {
-        if (resultCode == RESULT_OK) { // Successfully.
-            // Parse select result.
-            ArrayList<String> imageList = Album.parseResult(data);
-        } else if (resultCode == RESULT_CANCELED) {
-            // User canceled.
-        }
-    }
-}
-```
-
-## Advanced configuration
-**This configuration is not necessary, not configured can also be used:**
-
-1. `ImageLoader`, the default use of 'LocalImageLoader`, you can use` Glide` and `Picasso` and other third-party framework to achieve.  
-2. `Locale`, the default has been supported international, and support Simplified Chinese, Traditional Chinese, English. If you want to specify the language, you can use the `Locale` configuration.
-
-### ImageLoader config
-I recommend using the default `ImageLoader` first, followed by` Glide`, followed by `Picasso`, and finally` ImageLoader`, which does not support `Fresco` for the time being.
-
-```java
-public class Application extends android.app.Application {
     @Override
-    public void onCreate() {
-        super.onCreate();
-
-        Album.initialize(
-            new AlbumConfig.Build()
-                .setImageLoader(new LocalImageLoader()) // Use default loader.
-                .build()
-        );
+    public void load(ImageView imageView, AlbumFile albumFile) {
+        load(imageView, albumFile.getPath());
     }
-}
-```
 
-**Use Glide:**
-```java
-public class GlideImageLoader implements AlbumImageLoader {
     @Override
-    public void loadImage(ImageView imageView, String imagePath, int width, int height) {
+    public void load(ImageView imageView, String url) {
         Glide.with(imageView.getContext())
-            .load(new File(imagePath))
-            .into(imageView);
+                .load(url)
+                .error(R.drawable.placeholder)
+                .placeholder(R.drawable.placeholder)
+                .crossFade()
+                .into(imageView);
     }
 }
-
-...
-
-Album.initialize(new AlbumConfig.Build()
-    .setImageLoader(new GlideImageLoader()) // Use glide loader.
-    .build()
 ```
-
-**Use Picasso:**
+The example uses [Glide](https://github.com/bumptech/glide) to load thumbnails of pictures and videos. Please remember to configure the `AlbumLoader` you just implemented.
 ```java
-public class PicassoImageLoader implements AlbumImageLoader {
+Album.initialize(AlbumConfig.newBuilder(this)
+    .setAlbumLoader(new MediaLoader())
+    ...
+    .build());
+```
 
-    @Override
-    public void loadImage(ImageView imageView, String imagePath, int width, int height) {
-        Picasso.with(imageView.getContext())
-            .load(new File(imagePath))
-            .centerCrop()
-            .resize(width, height)
-            .into(imageView);
-    }
-}
+### Image and video mix options
+```java
+Album.album(this) // Image and video mix options.
+    .multipleChoice() // Multi-Mode, Single-Mode: singleChoice().
+    .columnCount() // The number of columns in the page list.
+    .selectCount()  // Choose up to a few images.
+    .camera() // Whether the camera appears in the Item.
+    .cameraVideoQuality(1) // Video quality, [0, 1].
+    .cameraVideoLimitDuration(Long.MAX_VALUE) // The longest duration of the video is in milliseconds.
+    .cameraVideoLimitBytes()(Long.MAX_VALUE) // Maximum size of the video, in bytes.
+    .checkedList() // To reverse the list.
+    .filterSize() // Filter the file size.
+    .filterMimeType() // Filter file format.
+    .filterDuration() // Filter video duration.
+    .afterFilterVisibility() // Show the filtered files, but they are not available.
+    .onResult(new Action<ArrayList<AlbumFile>>() {
+        @Override
+        public void onAction(@NonNull ArrayList<AlbumFile> result) {
+            // TODO accept the result.
+        }
+    })
+    .onCancel(new Action<String>() {
+        @Override
+        public void onAction(@NonNull String result) {
+            // The user canceled the operation.
+        }
+    })
+    .start();
+```
 
+### Image Selection
+```java
+Album.image(this) // Image selection.
+    .multipleChoice()
+    .camera()
+    .columnCount()
+    .selectCount()
+    .checkedList(mAlbumFiles)
+    .filterSize() // Filter the file size.
+    .filterMimeType() // Filter file format.
+    .afterFilterVisibility() // Show the filtered files, but they are not available.
+    .onResult(new Action<ArrayList<AlbumFile>>() {
+        @Override
+        public void onAction(@NonNull ArrayList<AlbumFile> result) {
+        }
+    })
+    .onCancel(new Action<String>() {
+        @Override
+        public void onAction(@NonNull String result) {
+        }
+    })
+    .start();
+```
+
+If developer want to crop the image, please use [Durban](https://github.com/yanzhenjie/Durban).
+
+### Video Selection
+```java
+Album.video(this) // Video selection.
+    .multipleChoice()
+    .camera(true)
+    .columnCount(2)
+    .selectCount(6)
+    .checkedList(mAlbumFiles)
+    .filterSize()
+    .filterMimeType()
+    .filterDuration()
+    .afterFilterVisibility() // Show the filtered files, but they are not available.
+    .onResult(new Action<ArrayList<AlbumFile>>() {
+        @Override
+        public void onAction(@NonNull ArrayList<AlbumFile> result) {
+        }
+    })
+    .onCancel(new Action<String>() {
+        @Override
+        public void onAction(@NonNull String result) {
+        }
+    })
+    .start();
+```
+
+### Take Picture
+```java
+Album.camera(this) // Camera function.
+    .image() // Take Picture.
+    .filePath() // File save path, not required.
+    .onResult(new Action<String>() {
+        @Override
+        public void onAction(@NonNull String result) {
+        }
+    })
+    .onCancel(new Action<String>() {
+        @Override
+        public void onAction(@NonNull String result) {
+        }
+    })
+    .start();
+```
+
+If developer want to crop the image, please use [Durban](https://github.com/yanzhenjie/Durban).
+
+### Record Video
+```java
+Album.camera(this)
+    .video() // Record Video.
+    .filePath()
+    .quality(1) // Video quality, [0, 1].
+    .limitDuration(Long.MAX_VALUE) // The longest duration of the video is in milliseconds.
+    .limitBytes(Long.MAX_VALUE) // Maximum size of the video, in bytes.
+    .onResult(new Action<String>() {
+        @Override
+        public void onAction(@NonNull String result) {
+        }
+    })
+    .onCancel(new Action<String>() {
+        @Override
+        public void onAction(@NonNull String result) {
+        }
+    })
+    .start();
+```
+
+### Gallery
+```java
+// Preview AlbumFile:
+Album.galleryAlbum(this)
 ...
 
-Album.initialize(new AlbumConfig.Build()
-    .setImageLoader(new PicassoImageLoader()) // Use picasso loader.
+// Preview path:
+Album.gallery(this)
+    .checkedList(imageList) // List of image to view: ArrayList<String>.
+    .checkable(true) // Whether there is a selection function.
+    .onResult(new Action<ArrayList<String>>() { // If checkable(false), action not required.
+        @Override
+        public void onAction(@NonNull ArrayList<String> result) {
+        }
+    })
+    .onCancel(new Action<String>() {
+        @Override
+        public void onAction(@NonNull String result) {
+        }
+    })
+    .start();
+```
+
+> If `checkable(false)`, listener not required, the `CheckBox` and the `FinishButton` will be not appear.
+
+The user may click or long press on the preview image and the developer can listen to both events:
+```java
+Album.gallery(this)
+    ...
+    .itemClick(new ItemAction<String>() {
+        @Override
+        public void onAction(Context context, String item) {
+        }
+    })
+    .itemLongClick(new ItemAction<String>() {
+        @Override
+        public void onAction(Context context, String item) {
+        }
+    })
+    .start();
+```
+
+### Capabilities of AlbumFile
+`AlbumFile` is the result of the selection of images and videos, The properties of the image and video are different, and their different attributes are listed below.
+
+#### Image
+```java
+public int getMediaType(); // File type, the image is AlbumFile.TYPE_IMAGE.
+public String getPath(); // File path, must not be empty.
+public String getBucketName(); // The name of the folder where the file is located.
+public String getMimeType(); // File MimeType, for example: image/jpeg.
+public long getAddDate(); // File to add date, must have.
+public float getLatitude(); // The latitude of the file, may be zero.
+public float getLongitude(); // The longitude of the file, may be zero.
+public long getSize(); // File size in bytes.
+public String getThumbPath(); // This is a small thumbnail.
+```
+
+#### Video
+```java
+public int getMediaType(); // File type, the video is AlbumFile.TYPE_VIDEO.
+public String getPath(); // File path, must not be empty.
+public String getBucketName(); // The name of the folder where the file is located.
+public String getMimeType(); // File MimeType, for example: image/jpeg.
+public long getAddDate(); // File to add date, must have.
+public float getLatitude(); // The latitude of the file, may be zero.
+public float getLongitude(); // The longitude of the file, may be zero.
+public long getSize(); // File size in bytes.
+public long getDuration(); // Video duration, must have.
+public String getThumbPath(); // This is a small thumbnail.
+```
+
+### Customize UI
+Through `Widget`, developer can configure the title, color of StatusBar, color of NavigationBar and so on.
+
+```java
+// Such as image video mix:
+ Album.album(this)
+    .multipleChoice()
+    .widget(...)
+    ...
+
+// Image selection:
+Album.image(this)
+    .multipleChoice()
+    .widget(...)
+    ...
+
+// Video selection:
+Album.video(this)
+    .multipleChoice()
+    .widget(...)
+    ...
+
+// Gallery, preview AlbumFile:
+Album.galleryAlbum(this)
+    .widget(...)
+    ...
+
+// Gallery, preview path:
+Album.gallery(this)
+    .widget(...)
+    ...
+```
+
+So we only need to pass in a `Widget` parameter just fine:
+```java
+// StatusBar is a dark background when building:
+Widget.newDarkBuilder(this)
+...
+
+// StatusBar is a light background when building:
+Widget.newLightBuilder(this)
+...
+
+// Such as:
+Widget.xxxBuilder(this)
+    .title(...) // Title.
+    .statusBarColor(Color.WHITE) // StatusBar color.
+    .toolBarColor(Color.WHITE) // Toolbar color.
+    .navigationBarColor(Color.WHITE) // Virtual NavigationBar color of Android5.0+.
+    .mediaItemCheckSelector(Color.BLUE, Color.GREEN) // Image or video selection box.
+    .bucketItemCheckSelector(Color.RED, Color.YELLOW) // Select the folder selection box.
+    .buttonStyle( // Used to configure the style of button when the image/video is not found.
+        Widget.ButtonStyle.newLightBuilder(this) // With Widget's Builder model.
+            .setButtonSelector(Color.WHITE, Color.WHITE) // Button selector.
+            .build()
+    )
     .build()
 ```
 
-# Proguard-rules
-If there is a problem, add the rule to the proguard-rules:
+### Configuration language
+Album defaults to English and changes with the system language. Unfortunately, Album only supports English, Simplified Chinese, Traditional Chinese and Portuguese. However, developers can copy the items in Album's `string.xml` into your project for translation, the best thing is that you can [contribute](CONTRIBUTING.md) and submit pull requests to perfect Album.
+
+Developers can specify Album's language:
+```java
+Album.initialize(AlbumConfig.newBuilder(this)
+    ...
+    .setLocale(Locale.ENGLISH)
+    .build());
+```
+
+## Contributing
+Before submitting pull requests, contributors must abide by the [agreement](CONTRIBUTING.md) .
+
+## Proguard-rules
+If you are using ProGuard you might need to add the following options:
 ```txt
 -dontwarn com.yanzhenjie.album.**
--keep class com.yanzhenjie.album.**{*;}
+-dontwarn com.yanzhenjie.mediascanner.**
 ```
 
-# Thanks
-1. [PhotoView](https://github.com/chrisbanes/PhotoView)
-2. [LoadingDrawable](https://github.com/dinuscxj/LoadingDrawable)
-
-# License
+## License
 ```text
 Copyright 2017 Yan Zhenjie
 

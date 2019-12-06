@@ -1,5 +1,5 @@
 /*
- * Copyright © Yan Zhenjie. All Rights Reserved
+ * Copyright 2016 Yan Zhenjie.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,31 @@
 package com.yanzhenjie.album;
 
 import android.app.Activity;
-import android.content.Intent;
-import android.support.annotation.ColorInt;
-import android.support.annotation.NonNull;
-import android.support.v4.app.Fragment;
+import android.app.Fragment;
+import android.content.Context;
+import android.support.annotation.IntDef;
+import android.util.Log;
 
-import com.yanzhenjie.album.task.LocalImageLoader;
+import com.yanzhenjie.album.api.AlbumMultipleWrapper;
+import com.yanzhenjie.album.api.AlbumSingleWrapper;
+import com.yanzhenjie.album.api.BasicGalleryWrapper;
+import com.yanzhenjie.album.api.GalleryAlbumWrapper;
+import com.yanzhenjie.album.api.GalleryWrapper;
+import com.yanzhenjie.album.api.ImageCameraWrapper;
+import com.yanzhenjie.album.api.ImageMultipleWrapper;
+import com.yanzhenjie.album.api.ImageSingleWrapper;
+import com.yanzhenjie.album.api.VideoCameraWrapper;
+import com.yanzhenjie.album.api.VideoMultipleWrapper;
+import com.yanzhenjie.album.api.VideoSingleWrapper;
+import com.yanzhenjie.album.api.camera.AlbumCamera;
+import com.yanzhenjie.album.api.camera.Camera;
+import com.yanzhenjie.album.api.choice.AlbumChoice;
+import com.yanzhenjie.album.api.choice.Choice;
+import com.yanzhenjie.album.api.choice.ImageChoice;
+import com.yanzhenjie.album.api.choice.VideoChoice;
 
-import java.util.ArrayList;
-import java.util.Locale;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
 /**
  * <p>Entrance.</p>
@@ -32,7 +48,53 @@ import java.util.Locale;
  */
 public final class Album {
 
-    public static String KEY_OUTPUT_IMAGE_PATH_LIST = "KEY_OUTPUT_IMAGE_PATH_LIST";
+    // All.
+    public static final String KEY_INPUT_WIDGET = "KEY_INPUT_WIDGET";
+    public static final String KEY_INPUT_CHECKED_LIST = "KEY_INPUT_CHECKED_LIST";
+
+    // Album.
+    public static final String KEY_INPUT_FUNCTION = "KEY_INPUT_FUNCTION";
+    public static final int FUNCTION_CHOICE_IMAGE = 0;
+    public static final int FUNCTION_CHOICE_VIDEO = 1;
+    public static final int FUNCTION_CHOICE_ALBUM = 2;
+
+    public static final int FUNCTION_CAMERA_IMAGE = 0;
+    public static final int FUNCTION_CAMERA_VIDEO = 1;
+
+    public static final String KEY_INPUT_CHOICE_MODE = "KEY_INPUT_CHOICE_MODE";
+    public static final int MODE_MULTIPLE = 1;
+    public static final int MODE_SINGLE = 2;
+    public static final String KEY_INPUT_COLUMN_COUNT = "KEY_INPUT_COLUMN_COUNT";
+    public static final String KEY_INPUT_ALLOW_CAMERA = "KEY_INPUT_ALLOW_CAMERA";
+    public static final String KEY_INPUT_LIMIT_COUNT = "KEY_INPUT_LIMIT_COUNT";
+
+    // Gallery.
+    public static final String KEY_INPUT_CURRENT_POSITION = "KEY_INPUT_CURRENT_POSITION";
+    public static final String KEY_INPUT_GALLERY_CHECKABLE = "KEY_INPUT_GALLERY_CHECKABLE";
+
+    // Camera.
+    public static final String KEY_INPUT_FILE_PATH = "KEY_INPUT_FILE_PATH";
+    public static final String KEY_INPUT_CAMERA_QUALITY = "KEY_INPUT_CAMERA_QUALITY";
+    public static final String KEY_INPUT_CAMERA_DURATION = "KEY_INPUT_CAMERA_DURATION";
+    public static final String KEY_INPUT_CAMERA_BYTES = "KEY_INPUT_CAMERA_BYTES";
+
+    // Filter.
+    public static final String KEY_INPUT_FILTER_VISIBILITY = "KEY_INPUT_FILTER_VISIBILITY";
+
+    @IntDef({FUNCTION_CHOICE_IMAGE, FUNCTION_CHOICE_VIDEO, FUNCTION_CHOICE_ALBUM})
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface ChoiceFunction {
+    }
+
+    @IntDef({FUNCTION_CAMERA_IMAGE, FUNCTION_CAMERA_VIDEO})
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface CameraFunction {
+    }
+
+    @IntDef({MODE_MULTIPLE, MODE_SINGLE})
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface ChoiceMode {
+    }
 
     private static AlbumConfig sAlbumConfig;
 
@@ -42,242 +104,185 @@ public final class Album {
      * @param albumConfig {@link AlbumConfig}.
      */
     public static void initialize(AlbumConfig albumConfig) {
-        sAlbumConfig = albumConfig;
+        if (sAlbumConfig == null) sAlbumConfig = albumConfig;
+        else Log.w("Album", new IllegalStateException("Illegal operation, only allowed to configure once."));
     }
 
     /**
      * Get the album configuration.
-     *
-     * @return {@link AlbumConfig}.
      */
     public static AlbumConfig getAlbumConfig() {
         if (sAlbumConfig == null) {
-            initialize(new AlbumConfig.Build()
-                    .setImageLoader(new LocalImageLoader())
-                    .setLocale(Locale.getDefault())
-                    .build()
-            );
+            sAlbumConfig = AlbumConfig.newBuilder(null).build();
         }
         return sAlbumConfig;
     }
 
     /**
-     * Open the album from the activity.
-     *
-     * @param activity {@link Activity}.
-     * @return {@link AlbumWrapper}.
+     * Open the camera from the activity.
      */
-    public static AlbumWrapper album(Activity activity) {
-        return new AlbumWrapper(activity);
+    public static Camera<ImageCameraWrapper, VideoCameraWrapper> camera(Context context) {
+        return new AlbumCamera(context);
     }
 
     /**
-     * Open the album from the {@link Fragment}.
-     *
-     * @param fragment {@link Fragment}.
-     * @return {@link AlbumWrapper}.
+     * Select images.
      */
-    public static AlbumWrapper album(Fragment fragment) {
-        return new AlbumWrapper(fragment);
+    public static Choice<ImageMultipleWrapper, ImageSingleWrapper> image(Context context) {
+        return new ImageChoice(context);
     }
 
     /**
-     * Open the album from the {@link android.app.Fragment}.
-     *
-     * @param fragment {@link android.app.Fragment}.
-     * @return {@link AlbumWrapper}.
+     * Select videos.
      */
-    public static AlbumWrapper album(android.app.Fragment fragment) {
-        return new AlbumWrapper(fragment);
+    public static Choice<VideoMultipleWrapper, VideoSingleWrapper> video(Context context) {
+        return new VideoChoice(context);
     }
 
     /**
-     * Open the gallery from the activity.
-     *
-     * @param activity {@link Activity}.
-     * @return {@link GalleryWrapper}.
+     * Select images and videos.
      */
-    public static GalleryWrapper gallery(Activity activity) {
-        return new GalleryWrapper(activity);
+    public static Choice<AlbumMultipleWrapper, AlbumSingleWrapper> album(Context context) {
+        return new AlbumChoice(context);
     }
 
     /**
-     * Open the gallery from the {@link Fragment}.
-     *
-     * @param fragment {@link Fragment}.
-     * @return {@link GalleryWrapper}.
+     * Preview picture.
      */
-    public static GalleryWrapper gallery(Fragment fragment) {
-        return new GalleryWrapper(fragment);
+    public static GalleryWrapper gallery(Context context) {
+        return new GalleryWrapper(context);
     }
 
     /**
-     * Open the gallery from the {@link android.app.Fragment}.
-     *
-     * @param fragment {@link android.app.Fragment}.
-     * @return {@link GalleryWrapper}.
+     * Preview Album.
      */
-    public static GalleryWrapper gallery(android.app.Fragment fragment) {
-        return new GalleryWrapper(fragment);
+    public static GalleryAlbumWrapper galleryAlbum(Context context) {
+        return new GalleryAlbumWrapper(context);
     }
 
     /**
      * Open the camera from the activity.
-     *
-     * @param activity {@link Activity}.
-     * @return {@link CameraWrapper}.
      */
-    public static CameraWrapper camera(Activity activity) {
-        return new CameraWrapper(activity);
+    public static Camera<ImageCameraWrapper, VideoCameraWrapper> camera(Activity activity) {
+        return new AlbumCamera(activity);
     }
 
     /**
-     * Open the camera from the {@link Fragment}.
-     *
-     * @param fragment {@link Fragment}.
-     * @return {@link CameraWrapper}.
+     * Select images.
      */
-    public static CameraWrapper camera(Fragment fragment) {
-        return new CameraWrapper(fragment);
+    public static Choice<ImageMultipleWrapper, ImageSingleWrapper> image(Activity activity) {
+        return new ImageChoice(activity);
     }
 
     /**
-     * Open the camera from the {@link android.app.Fragment}.
-     *
-     * @param fragment {@link android.app.Fragment}.
-     * @return {@link CameraWrapper}.
+     * Select videos.
      */
-    public static CameraWrapper camera(android.app.Fragment fragment) {
-        return new CameraWrapper(fragment);
+    public static Choice<VideoMultipleWrapper, VideoSingleWrapper> video(Activity activity) {
+        return new VideoChoice(activity);
     }
 
     /**
-     * Resolve the selected photo path list.
-     *
-     * @param intent {@code Intent} from {@code onActivityResult(int, int, Intent)}.
-     * @return {@code ArrayList<String>}.
+     * Select images and videos.
      */
-    public static
-    @NonNull
-    ArrayList<String> parseResult(Intent intent) {
-        ArrayList<String> pathList = intent.getStringArrayListExtra(KEY_OUTPUT_IMAGE_PATH_LIST);
-        if (pathList == null)
-            pathList = new ArrayList<>();
-        return pathList;
+    public static Choice<AlbumMultipleWrapper, AlbumSingleWrapper> album(Activity activity) {
+        return new AlbumChoice(activity);
     }
 
     /**
-     * Open the album from the {@link Activity}.
-     *
-     * @param activity    {@link Activity}.
-     * @param requestCode request code.
-     * @see #album(Activity)
-     * @see #album(Fragment)
-     * @see #album(android.app.Fragment)
-     * @deprecated user {@link #album(Activity)} instead.
+     * Preview picture.
      */
-    @Deprecated
-    public static void startAlbum(Activity activity, int requestCode) {
-        Intent intent = new Intent(activity, AlbumActivity.class);
-        activity.startActivityForResult(intent, requestCode);
+    public static BasicGalleryWrapper<GalleryWrapper, String, String, String> gallery(Activity activity) {
+        return new GalleryWrapper(activity);
     }
 
     /**
-     * Open the album from the {@link Activity}.
-     *
-     * @param activity    {@link Activity}.
-     * @param requestCode request code.
-     * @param limitCount  number of photos to select.
-     * @see #album(Activity)
-     * @see #album(Fragment)
-     * @see #album(android.app.Fragment)
-     * @deprecated user {@link #album(Activity)} instead.
+     * Preview Album.
      */
-    @Deprecated
-    public static void startAlbum(Activity activity, int requestCode, int limitCount) {
-        Intent intent = new Intent(activity, AlbumActivity.class);
-        intent.putExtra(AlbumWrapper.KEY_INPUT_LIMIT_COUNT, limitCount);
-        activity.startActivityForResult(intent, requestCode);
+    public static BasicGalleryWrapper<GalleryAlbumWrapper, AlbumFile, String, AlbumFile> galleryAlbum(Activity activity) {
+        return new GalleryAlbumWrapper(activity);
     }
 
     /**
-     * Open the album from the {@link Activity}.
-     *
-     * @param activity       {@link Activity}.
-     * @param requestCode    request code.
-     * @param limitCount     number of photos to select.
-     * @param toolbarColor   Toolbar color.
-     * @param statusBarColor StatusBar color.
-     * @see #album(Activity)
-     * @see #album(Fragment)
-     * @see #album(android.app.Fragment)
-     * @deprecated user {@link #album(Activity)} instead.
+     * Open the camera from the activity.
      */
-    @Deprecated
-    public static void startAlbum(Activity activity, int requestCode, int limitCount, @ColorInt int toolbarColor, @ColorInt int
-            statusBarColor) {
-        Intent intent = new Intent(activity, AlbumActivity.class);
-        intent.putExtra(AlbumWrapper.KEY_INPUT_LIMIT_COUNT, limitCount);
-        intent.putExtra(AlbumWrapper.KEY_INPUT_TOOLBAR_COLOR, toolbarColor);
-        intent.putExtra(AlbumWrapper.KEY_INPUT_STATUS_COLOR, statusBarColor);
-        activity.startActivityForResult(intent, requestCode);
+    public static Camera<ImageCameraWrapper, VideoCameraWrapper> camera(Fragment fragment) {
+        return new AlbumCamera(fragment.getActivity());
     }
 
     /**
-     * Open the album from the {@link Fragment}.
-     *
-     * @param fragment    {@link Fragment}.
-     * @param requestCode request code.
-     * @see #album(Activity)
-     * @see #album(Fragment)
-     * @see #album(android.app.Fragment)
-     * @deprecated user {@link #album(Fragment)} instead.
+     * Select images.
      */
-    @Deprecated
-    public static void startAlbum(Fragment fragment, int requestCode) {
-        Intent intent = new Intent(fragment.getContext(), AlbumActivity.class);
-        fragment.startActivityForResult(intent, requestCode);
+    public static Choice<ImageMultipleWrapper, ImageSingleWrapper> image(Fragment fragment) {
+        return new ImageChoice(fragment.getActivity());
     }
 
     /**
-     * Open the album from the {@link Fragment}.
-     *
-     * @param fragment    {@link Fragment}.
-     * @param requestCode request code.
-     * @param limitCount  number of photos to select.
-     * @see #album(Activity)
-     * @see #album(Fragment)
-     * @see #album(android.app.Fragment)
-     * @deprecated user {@link #album(Fragment)} instead.
+     * Select videos.
      */
-    @Deprecated
-    public static void startAlbum(Fragment fragment, int requestCode, int limitCount) {
-        Intent intent = new Intent(fragment.getContext(), AlbumActivity.class);
-        intent.putExtra(AlbumWrapper.KEY_INPUT_LIMIT_COUNT, limitCount);
-        fragment.startActivityForResult(intent, requestCode);
+    public static Choice<VideoMultipleWrapper, VideoSingleWrapper> video(Fragment fragment) {
+        return new VideoChoice(fragment.getActivity());
     }
 
     /**
-     * Open the album from the {@link Fragment}.
-     *
-     * @param fragment       {@link Fragment}.
-     * @param requestCode    request code.
-     * @param limitCount     number of photos to select.
-     * @param toolbarColor   Toolbar color.
-     * @param statusBarColor StatusBar color.
-     * @see #album(Activity)
-     * @see #album(Fragment)
-     * @see #album(android.app.Fragment)
-     * @deprecated user {@link #album(Fragment)} instead.
+     * Select images and videos.
      */
-    @Deprecated
-    public static void startAlbum(Fragment fragment, int requestCode, int limitCount, @ColorInt int toolbarColor, @ColorInt int
-            statusBarColor) {
-        Intent intent = new Intent(fragment.getContext(), AlbumActivity.class);
-        intent.putExtra(AlbumWrapper.KEY_INPUT_LIMIT_COUNT, limitCount);
-        intent.putExtra(AlbumWrapper.KEY_INPUT_TOOLBAR_COLOR, toolbarColor);
-        intent.putExtra(AlbumWrapper.KEY_INPUT_STATUS_COLOR, statusBarColor);
-        fragment.startActivityForResult(intent, requestCode);
+    public static Choice<AlbumMultipleWrapper, AlbumSingleWrapper> album(Fragment fragment) {
+        return new AlbumChoice(fragment.getActivity());
     }
 
+    /**
+     * Preview picture.
+     */
+    public static BasicGalleryWrapper<GalleryWrapper, String, String, String> gallery(Fragment fragment) {
+        return new GalleryWrapper(fragment.getActivity());
+    }
+
+    /**
+     * Preview Album.
+     */
+    public static BasicGalleryWrapper<GalleryAlbumWrapper, AlbumFile, String, AlbumFile> galleryAlbum(Fragment fragment) {
+        return new GalleryAlbumWrapper(fragment.getActivity());
+    }
+
+    /**
+     * Open the camera from the activity.
+     */
+    public static Camera<ImageCameraWrapper, VideoCameraWrapper> camera(android.support.v4.app.Fragment fragment) {
+        return new AlbumCamera(fragment.getContext());
+    }
+
+    /**
+     * Select images.
+     */
+    public static Choice<ImageMultipleWrapper, ImageSingleWrapper> image(android.support.v4.app.Fragment fragment) {
+        return new ImageChoice(fragment.getContext());
+    }
+
+    /**
+     * Select videos.
+     */
+    public static Choice<VideoMultipleWrapper, VideoSingleWrapper> video(android.support.v4.app.Fragment fragment) {
+        return new VideoChoice(fragment.getContext());
+    }
+
+    /**
+     * Select images and videos.
+     */
+    public static Choice<AlbumMultipleWrapper, AlbumSingleWrapper> album(android.support.v4.app.Fragment fragment) {
+        return new AlbumChoice(fragment.getContext());
+    }
+
+    /**
+     * Preview picture.
+     */
+    public static BasicGalleryWrapper<GalleryWrapper, String, String, String> gallery(android.support.v4.app.Fragment fragment) {
+        return new GalleryWrapper(fragment.getContext());
+    }
+
+    /**
+     * Preview Album.
+     */
+    public static BasicGalleryWrapper<GalleryAlbumWrapper, AlbumFile, String, AlbumFile> galleryAlbum(android.support.v4.app.Fragment fragment) {
+        return new GalleryAlbumWrapper(fragment.getContext());
+    }
 }

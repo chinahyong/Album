@@ -8,16 +8,16 @@ android {
         minSdkVersion rootProject.ext.android.minSdkVersion
         targetSdkVersion rootProject.ext.android.targetSdkVersion
     }
+
+    resourcePrefix 'album'
 }
 
 dependencies {
-    compile rootProject.ext.dependencies.appcompat
-    compile rootProject.ext.dependencies.design
-    compile rootProject.ext.dependencies.recyclerview
-    compile rootProject.ext.dependencies.fragment
-    compile rootProject.ext.dependencies.dialog
-    compile rootProject.ext.dependencies.mediascanner
-    compile rootProject.ext.dependencies.cardview
+    implementation rootProject.ext.dependencies.appCompat
+    implementation rootProject.ext.dependencies.design
+    implementation rootProject.ext.dependencies.recyclerView
+    implementation rootProject.ext.dependencies.cardView
+    api rootProject.ext.dependencies.mediaScanner
 }
 
-apply from: "maven.gradle"
+apply from: 'https://raw.githubusercontent.com/yanzhenjie/bintray/master/maven.gradle'
